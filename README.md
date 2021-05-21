@@ -59,7 +59,7 @@ The bounding boxes have to be listed as one bounding box per line, with on that 
 
 Standardization is done by dividing the number of pixels by the total number of pixels of the image. So a bounding box on pixel (10, 20) with a width of 30x40 on a picture of size (100, 100) would be standardized to (0.1, 0.2, 0.3, 0.4).
 
-![labels](imgs/yolo_labels.png)
+![labels](imgs/yolo_labels.PNG)
 
 # 3. How to configure the YAML files for training a Yolo V5 Object Detection Model?
 To start training a Yolo V5 model you need two YAML files.

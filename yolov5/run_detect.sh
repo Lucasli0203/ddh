@@ -1,0 +1,1 @@
+python .\detect.py --weights .\weights\best.pt --img 416

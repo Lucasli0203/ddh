@@ -21,7 +21,6 @@ from numpy.linalg import lstsq
 import math
 import pickle
 
-aux = 0
 
 def angle2(p1, p2, p3):
   x1, y1 = p1[0], p1[1]
@@ -290,7 +289,7 @@ def detect(save_img=False):
                         
                         cropped = cv2img[y:h, x:w]
 
-
+                        '''
 
                         gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
                         image = cv2.equalizeHist(gray)
@@ -312,62 +311,23 @@ def detect(save_img=False):
 
                         ret,thresh1 = cv2.threshold(image, thres_val, 255, cv2.THRESH_BINARY)
 
-                        
-                        #th = trans_img(cropped) #si no quiero el procesamiento anterior, directamente pasar cropped como input
-                        cnts = cv2.findContours(thresh1.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                        '''
+
+                        #th = thresh1
+                        th = trans_img(cropped) #si no quiero el procesamiento anterior, directamente pasar cropped como input
+                        cnts = cv2.findContours(th.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                         cnts = imutils.grab_contours(cnts) 
                         c = max(cnts, key=len) #cnts[-1] #max(cnts, key=cv2.contourArea)
 
 
 
                         extLeft = tuple(c[c[:, :, 0].argmin()][0])
-                        shifted_extLeft = tuple([extLeft[0] + x, h - 3])# extLeft[1] + y]) #h
+                        shifted_extLeft = tuple([extLeft[0] + x, h - 2])# extLeft[1] + y]) #h
                         c2 = shifted_extLeft
                         c7 = (shifted_extLeft[0] + 30, shifted_extLeft[1])
 
                         cv2.circle(im0, shifted_extLeft, 4, (183, 15, 245), -1)
 
-                        aux = extLeft[0]
-
-                    # 髂骨平面 Ilium_plane
-                    if int(cls) == 3:
-                        
-                        cropped = cv2img[y:h, x:w]
-                        th = trans_img(cropped)
-                        #gray = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY)
-                        #ret2,th = cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-                        
-                        cnts = cv2.findContours(th.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                        cnts = imutils.grab_contours(cnts)
-                        cnts = sorted(cnts, key = cv2.contourArea, reverse = True)
-                        c = max(cnts, key=len)
-
-                        
-                        # support line for line n1
-                        p1 = tuple(c[c[:, :, 0].argmax()][0])[0]
-                        p2 = (h-y) // 2
-                        #p11, p22 = find_matching_pair(c, p1-1, p2)
-                        #cv2.circle(im0, (p1 + x, p2 + y), 4, (122, 0, 255), -1)
-                        c6 = (p1 + x, p2 + y)
-
-
-                        #cv2.imshow('res2',th)
-                        #cv2.waitKey(0)
-                        #cv2.destroyAllWindows()
-
-
-                        #extRight = tuple(c[c[:, :, 0].argmax()][0])
-                        #rightUpper = tuple([extRight[0], 0])
-                        extTop = tuple(c[c[:, :, 1].argmin()][0])
-                        #cv2.circle(cropped, extRight, 4, (0, 0, 255), -1)
-                        #right shitef point +20 ?
-                        new_top = tuple([extTop[0], extTop[1]])
-                        shifted_extTop = tuple([new_top[0] + x + 384, new_top[1] + y])
-                        c3 = shifted_extTop
-
-
-                        #cv2.circle(im0, shifted_extTop, 4, (209, 153, 229), -1)
-                        
 
                     # 髂骨最低点 Lowest_ilium
                     if int(cls) == 5:
@@ -392,6 +352,82 @@ def detect(save_img=False):
                         c5 = shifted_extRight
 
                         cv2.circle(im0, shifted_extRight, 4, (0, 0, 255), -1)
+
+
+                    # 髂骨平面 Ilium_plane
+                    if int(cls) == 3:
+                        
+                        cropped = cv2img[y:h, x:w]
+
+
+                        '''
+                        '''
+                        gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
+                        image = cv2.equalizeHist(gray)
+                        kernel = np.ones((5, 5),np.uint8)
+                        image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel, iterations=2)
+                        image = cv2.dilate(image,kernel,iterations = 1)
+                        image = cv2.GaussianBlur(image, (13, 13), 3)
+
+                        (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(image)
+                        intensity = maxVal-minVal
+                        #print('intensity = {}'.format(intensity))
+                        thres_val = intensity*0.99
+
+                        ret,thresh1 = cv2.threshold(image, thres_val, 255, cv2.THRESH_BINARY)
+
+                        th = thresh1 #trans_img(cropped) #si no quiero el procesamiento anterior, directamente pasar cropped como input
+                        cnts = cv2.findContours(th.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                        cnts = imutils.grab_contours(cnts) 
+                        c = max(cnts, key=len)
+                        '''
+                        '''
+
+                        #extRight = tuple(c[c[:, :, 0].argmax()][0])
+                        extTop = tuple(c[c[:, :, 1].argmin()][0])
+
+                        rightUpper = (extRight[0], extTop[1])
+                        #cv2.circle(cropped, extRight, 4, (0, 0, 255), -1)
+                        #right shitef point +20 ?
+                        new_top = tuple([extTop[0], extTop[1]])
+                        aux = new_top[0] + x
+                        shifted_extTop = tuple([ aux + (w - aux) + 30, new_top[1] + y])
+                        #shifted_rightUpper = (rightUpper[0] + x, rightUpper[1] + y)
+                        c3 = shifted_extTop
+
+
+                        #cv2.circle(im0, c3, 4, (209, 153, 229), -1)
+
+                        #cv2.imshow('res2',thresh1)
+                        #cv2.waitKey(0)
+                        #cv2.destroyAllWindows()
+
+
+                        th = trans_img(cropped)
+                        #gray = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY)
+                        #ret2,th = cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+                        
+                        cnts = cv2.findContours(th.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                        cnts = imutils.grab_contours(cnts)
+                        cnts = sorted(cnts, key = cv2.contourArea, reverse = True)
+                        c = max(cnts, key=len)
+
+                        
+                        # support line for line n1
+                        p1 = tuple(c[c[:, :, 0].argmax()][0])[0]
+                        p2 = (h-y) // 2
+                        #p11, p22 = find_matching_pair(c, p1-1, p2)
+                        
+                        c6 = (p1 + x, p2 + y)
+
+
+                        #cv2.circle(im0, c6, 4, (122, 0, 255), -1)
+
+                        #cv2.imshow('res2',th)
+                        #cv2.waitKey(0)
+                        #cv2.destroyAllWindows()
+                        
+
 
                     # 盂唇 Labrum
                     if int(cls) == 0:
@@ -426,7 +462,7 @@ def detect(save_img=False):
 
                         # projection over the original pic
                         # shifted 5pxl right and down
-                        shifted_middle = tuple([a + x + 5, b + y + 5]) 
+                        shifted_middle = tuple([a + x + 2, b + y + 2]) 
                         c1 = shifted_middle
                         # then draw it on im0 instead of cropped
 
@@ -460,12 +496,54 @@ def detect(save_img=False):
                         cv2.imwrite("ROI.jpg", trans_img(cv2img))
 
 
+                        
+
+                    #im0 = cv2img
+                
+                    '''
+                    if int(cls) == 0:
+                        xywh_values = [t.tolist() for t in xyxy]
+                        x = int(xywh_values[0])
+                        y = int(xywh_values[1])
+                        w = int(xywh_values[2])
+                        h = int(xywh_values[3])
+                        
+                        cropped = cv2img[y:h, x:w]
+                        gray = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY)
+                        ret2,th = cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+                        
+                        cnts = cv2.findContours(th.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                        cnts = imutils.grab_contours(cnts)
+                        c = max(cnts, key=cv2.contourArea)
+
+                        extLeft = tuple(c[c[:, :, 0].argmin()][0])
+                        extRight = tuple(c[c[:, :, 0].argmax()][0])
+                        extTop = tuple(c[c[:, :, 1].argmin()][0])
+                        extBot = tuple(c[c[:, :, 1].argmax()][0])
+
+                        #cir_position = (x//2 + w//2, y//2 + h//2)
+                        #cir_color = (255, 0, 0)
+                        #cv2.circle(cropped, cir_position, 5, cir_color, -1)
+
+                        #cv2.drawContours(cropped, [c], -1, (0, 255, 255), 2)
+                        cv2.circle(cropped, extLeft, 4, (0, 0, 255), -1)
+                        cv2.circle(cropped, extRight, 4, (0, 255, 0), -1)
+                        cv2.circle(cropped, extTop, 4, (255, 0, 0), -1)
+                        cv2.circle(cropped, extBot, 4, (255, 255, 0), -1)
+
+                        #cv2.imshow("ROI", cropped)
+                        cv2.imwrite("ROI.jpg", cv2img)
+                        #cv2.waitKey()
+                    '''
+
 
                 '''
                 BETA ANGLE
                 '''
-                drawLine(im0,c2, c3, (0, 255, 255))
-                drawLine(im0,c4, c1, (0, 255, 255))
+                #drawLine(im0,c2, c3, (0, 255, 255))
+                #drawLine(im0,c4, c1, (0, 255, 255))
+                cv2.line(im0, c2, c3, (0, 255, 255), 2)
+                cv2.line(im0, c4, c1, (0, 255, 255), 2)
                 #print('\npx, py, qx, qy = {}, {}, {}, {}'.format(px, py, qx, qy))
                 m1, b1 = find_formula(c2, c3)
                 m2, b2 = find_formula(c4, c1)
@@ -493,7 +571,15 @@ def detect(save_img=False):
                 ALPHA ANGLE
                 '''
                 drawLine(im0,c2, c7, (255, 255, 255))
-                drawLine(im0,c6, c5, (0, 255, 255))
+                #drawLine(im0,c6, c5, (0, 255, 255))
+                #cv2.line(im0, c2, c7, (255, 255, 255), 1)
+
+                # Project the line
+                m, b = find_formula(c5,c6)
+                new_y = line_ec(c2[0], m, b)
+                c6 = (c2[0], int(new_y))
+
+                cv2.line(im0, c6, c5, (0, 255, 255), 2)
                 m1, b1 = find_formula(c2, c3)
                 m2, b2 = find_formula(c4, c5)
 

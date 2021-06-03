@@ -282,6 +282,10 @@ def detect(save_img=False):
                     w = int(xywh_values[2])
                     h = int(xywh_values[3])
 
+                    # 骨软骨交界面 Osteochondral
+                    if int(cls) == 4:
+                        s4_x = x
+                        s4_w = w
                     
 
                     # 软骨膜 Perichondrium
@@ -322,7 +326,7 @@ def detect(save_img=False):
 
 
                         extLeft = tuple(c[c[:, :, 0].argmin()][0])
-                        shifted_extLeft = tuple([extLeft[0] + x, h - 2])# extLeft[1] + y]) #h
+                        shifted_extLeft = tuple([extLeft[0] + x, h])# extLeft[1] + y]) #h
                         c2 = shifted_extLeft
                         c7 = (shifted_extLeft[0] + 30, shifted_extLeft[1])
 
@@ -540,13 +544,21 @@ def detect(save_img=False):
                 '''
                 BETA ANGLE
                 '''
-                #drawLine(im0,c2, c3, (0, 255, 255))
-                #drawLine(im0,c4, c1, (0, 255, 255))
-                cv2.line(im0, c2, c3, (0, 255, 255), 2)
-                cv2.line(im0, c4, c1, (0, 255, 255), 2)
-                #print('\npx, py, qx, qy = {}, {}, {}, {}'.format(px, py, qx, qy))
-                m1, b1 = find_formula(c2, c3)
-                m2, b2 = find_formula(c4, c1)
+                ##### Add bias in the x-axis to make the line longer
+                projected_c3 = (s4_x + (s4_w-s4_x)//2, c3[1])
+                cv2.line(im0, c2, projected_c3, (0, 255, 255), 2) #===================================> L3
+                ##########################################################################################################
+                ##### Still adding bias, but this time it's more complex, we need to calculate the line equation #########
+                m, b = find_formula(c4,c1)
+                new_y = line_ec(c5[0]+30, m, b)
+                projected_c1 = (c5[0]+30, int(new_y))
+                cv2.line(im0, c4, projected_c1, (0, 255, 255), 2) #====================================> L2
+
+
+                ###########################################################################################################
+                ############################################ Get angle ####################################################
+                m1, b1 = find_formula(c2,  projected_c3)
+                m2, b2 = find_formula(c4,  projected_c1)
 
                 (xi, yi) = find_intersection(m1, m2, b1, b2)
                 #################################################cv2.circle(im0, (xi, yi), 4, (255, 0, 255), -1)
@@ -559,48 +571,50 @@ def detect(save_img=False):
                 #################################################cv2.circle(im0, projected_point, 4, (255, 0, 255), -1)
 
 
-                line1 = (c1, (xi, yi))
+                line1 = (projected_c1, (xi, yi))
                 line2 = (projected_point, (xi, yi))
                 angle = ang(line1, line2)
                 #angle = angle2(projected_point, (xi, yi), c1)
                 #angle = getAngle(projected_point, (xi, yi),  c1)
-                #################################################print('\nThe angle beta is {}'.format(angle))
+                print('\nThe angle beta is {}'.format(angle))
 
 
                 '''
                 ALPHA ANGLE
                 '''
                 drawLine(im0,c2, c7, (255, 255, 255))
-                #drawLine(im0,c6, c5, (0, 255, 255))
-                #cv2.line(im0, c2, c7, (255, 255, 255), 1)
 
                 # Project the line
                 m, b = find_formula(c5,c6)
                 new_y = line_ec(c2[0], m, b)
-                c6 = (c2[0], int(new_y))
+                projected_c6 = (c2[0], int(new_y))
 
-                cv2.line(im0, c6, c5, (0, 255, 255), 2)
+                cv2.line(im0, projected_c6, c5, (0, 255, 255), 2)  #=================================> L1
+
+                ###########################################################################################################
+                ############################################ Get angle ####################################################
                 m1, b1 = find_formula(c2, c3)
-                m2, b2 = find_formula(c4, c5)
+                m2, b2 = find_formula(projected_c6, c5)
 
 
                 (xi, yi) = find_intersection(m1, m2, b1, b2)
-                #################################################cv2.circle(im0, (xi, yi), 4, (255, 0, 255), -1)
+                #cv2.circle(im0, (xi, yi), 4, (255, 0, 255), -1)
+
 
                 #shift = int(math.hypot(xi - c2[0], yi - c2[1]))
 
                 # Project over x-axis
-                nyi = line_ec(xi-shift, m2, b2)
-                projected_point2 = (xi-shift, int(nyi))
-                #################################################cv2.circle(im0, projected_point2, 4, (255, 0, 255), -1)
+                #nyi = line_ec(xi-shift, m2, b2)
+                #projected_point2 = (xi-shift, int(nyi))
+                #cv2.circle(im0, projected_point2, 4, (255, 0, 255), -1)
 
 
-                line1 = ((xi, yi), projected_point2)
+                line1 = ((xi, yi), projected_c6)
                 line2 = ((xi, yi), c2)
                 angle = ang(line1, line2)
                 #angle = angle2(projected_point2, (xi, yi), c2)
                 #angle = getAngle(projected_point2, (xi, yi), c2)
-                #################################################print('\nThe angle alpha is {}'.format(angle))
+                print('\nThe angle alpha is {}'.format(angle))
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
